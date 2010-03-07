@@ -1,0 +1,122 @@
+
+
+
+          ###### #####  ##   ##  ##   ##  ##  ##   ##
+            ##   ##     ###  ##  ###  ##  ##  ### ###
+            ##   ####   ## # ##  ## # ##  ##    ###
+            ##   ##     ##  ###  ##  ###  ##  ### ###
+            ##   #####  ##   ##  ##   ##  ##  ##   ##
+
+                                           SDL Port
+
+ Copyright (C) 2003, 2007, 2008, 2009 Thomas Perl <thp@thpinfo.com>
+ 
+
+
+LICENSE
+=======
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
+    
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+    MA  02110-1301, USA.
+
+
+ABOUT
+=====
+
+   This is the SDL (Simple DirectMedia Layer) port of Tennix!, a 
+   game written by Thomas Perl in 2003. This version has been up-
+   scaled to a resolution of 640x480 in comparison to the 320x200 
+   format used in the original game.
+
+   Changes from the original Tennix to the first SDL release include
+   a new shadow, advanced alpha blending and the removal of the 
+   previously-included pseudo-advertisements.
+
+   For all changes, please see the ChangeLog file.
+
+   This port has been written on the 10th of May 2007 and is now 
+   being improved and updated since then.
+
+
+INSTALLATION
+============
+
+   To build tennix, simply run "make" (on Unix-like systems) or 
+   follow the instructions for your platform in the README.* files.
+
+   Tennix is known to build on Debian GNU/Linux 4.0 (etch), 
+   Win32 (mingw32), Mac OS X 10.4 (using XCode tools) and in
+   the Maemo 4.0 SDK (for Nokia Internet Tables, IT OS2008).
+
+   Binaries of Tennix can be found on the webpage.
+
+
+PLAYING TENNIX
+==============
+
+   You can play in either single-player or multi-player mode. 
+   For single player, Player 1 will play against the computer 
+   and for multi player, Player 1 will play against Player 2.
+
+   CONTROLS
+
+                         Player 1   |   Player 2
+                       ---------------------------
+   Move up                  W              O
+   Move down                S              L
+   Swing racket             D              K
+                       ---------------------------
+
+   See the manpage, tennix(6) for more controls (especially alternative
+   keyboard controls and mouse control, which is new since 0.6.0).
+
+   FUNCTION KEYS
+
+   Y  .... Make screenshot (save as screenshot.bmp)
+   F  .... Toggle fullscreen (X11 only)
+   C  .... Switch type of court (grass, clay, etc..)
+
+   Bonus (because you took the time to look at the README file):
+   Obviously, there are some hidden easter eggs that are still not available
+   via the UI, due to the fact that we didn't implement the UI for it yet :)
+   Think about [n]ight, [r]ain and fog (think fog[t], even..). Wind is also
+   available, but it's so broken, you'll have to look up the keys in game.c.
+
+
+DEVELOPMENT/DEBUGGING
+=====================
+
+   If you want to compile a debugging version of "tennix", you
+   have to set the environment variable "DEBUG" to "1", either by
+   using "DEBUG=1 make" or exporting the environment variable for
+   the current session, as in "export DEBUG=1" followed by "make".
+
+
+CREDITS
+=======
+
+   Some sound effects are based on data from the Freesound Project.
+
+   Thanks to Esad Hajdarevic and Stefan Doesinger for some optimizations
+   done during the Effiziente Programme course in January 2009 :)
+
+
+CONTACT
+=======
+
+    E-Mail: Thomas Perl <thp@thpinfo.com>
+    URL: http://icculus.org/tennix/
+
+

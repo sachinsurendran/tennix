@@ -1,0 +1,55 @@
+Todo and Idea List for Tennix
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ideas/suggestions from our Debian maintainer:
+ -> Make options menu same style as main menu
+ -> add picture to left side of main menu
+
+basic user experience testing results:
+ * Fix "hit area" for racket -> make outside areas also hit the ball or
+                                add a sound to make it audible that the
+                                ball hit the edge area of the racket.
+ * Give a visual clue where the ball goes when serving
+
+Effects/weather:
+ * Wind (modifies the ball movement)
+ * Snow (christmas edition?)
+ * Sunshine (=current, normal behaviour)
+
+For the next UI clean-up, use "Wild plastic" as music from:
+http://www.melodyloops.com/music-loops/free-music-loops-3.html
+
+CC-Licensed photos from Flickr:
+Converse over Tennis Court: http://flickr.com/photos/yolky/271033295/
+Public Tennis Court: http://flickr.com/photos/dan4th/1387725497/
+Tennis mit Palmen: http://flickr.com/photos/a2gemma/251846846/
+Melbourne Tennis-Stadium: http://flickr.com/photos/snips/32925154/
+Tennis Court Nightly: http://flickr.com/photos/exfordy/394570878/
+
+http://flickr.com/photos/mthird3rd/471720012/
+
+Sounds:
+click reverb: http://freesound.iua.upf.edu/samplesViewSingle.php?id=34099
+hover clack: http://freesound.iua.upf.edu/samplesViewSingle.php?id=34099
+
+http://www.freesound.org/samplesViewSingle.php?id=34067
+
+MAEMO TODO
+~~~~~~~~~~
+Main screen should look like all other maemo games
+Fix sounds (wav, mp3? - ogg doesn't seem to be supported)
+Widescreen support (??)
+
+
+Brainstorming
+~~~~~~~~~~~~~
+Make sound deactivatable (or sound volume settings?)
+Setting "sets to win" (2 or 3)
+Save game and continue game later on
+Highscore list
+Setting player names
+Correct serve repeat when serving into the out
+Change between full screen and windowed mode in Windows
+Implement tie break
+Implement "hit in the right area on serving"
+

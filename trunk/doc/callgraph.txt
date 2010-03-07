@@ -1,0 +1,60 @@
+Generating call graphs from Tennix source code
+==============================================
+
+A tutorial motivated by the optimization work done in the Effiziente
+Programme course at TU Vienna.
+
+http://www.complang.tuwien.ac.at/anton/lvas/effiziente-programme.html
+
+
+PREPARATIONS
+------------
+
+1. Download codeviz from http://www.csn.ul.ie/~mel/projects/codeviz/
+2. Unpack (we use: ~/pkg/codeviz/)
+3. Edit scripts "genfull" and "gengraph":
+   After this line:
+      use lib "$Bin/../lib/";
+   add this one:
+      use lib "$ENV{HOME}/pkg/codeviz/lib/";
+4. Install required packages (on Debian/Ubuntu):
+      sudo aptitude install graphviz ncc
+5. Make sure "genfull" and "gengraph" is in your $PATH
+
+
+Build with nccgen (see "man nccgen")
+------------------------------------
+
+make clean
+make MKCALLGRAPH=1
+
+
+BUILD THE full.graph FILE
+-------------------------
+
+genfull -g cncc
+
+
+GENERATING SPECIFIC CALL GRAPHS
+-------------------------------
+
+gengraph -f font_draw_string_alpha -d 10
+evince font_draw_string_alpha.ps
+gengraph -f font_get_metrics -r
+evince font_get_metrics.ps
+
+See "gengraph --help" for more options
+
+
+HTML CALLGRAPHS
+---------------
+
+sudo aptitude install source-highlight
+source-highlight --line-number-ref= *.c *.h
+gengraph -f font_draw_string_alpha -r --output-type=html --shighlight --base-url %f.html#%l
+firefox font_draw_string_alpha.html
+
+
+-- Thomas Perl <thpinfo.com/about>
+   Sat, 31 Jan 2009 13:44:17 +0100
+

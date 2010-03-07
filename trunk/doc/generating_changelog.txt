@@ -1,0 +1,15 @@
+First line should be like this:
+
+Tennix 0.x.y (DATE)
+
+Create commit summary information:
+  git log previousreleasetagname..thisreleasetagname | git shortlog
+
+Edit the commit summary information by formatting lines so that
+they start with a tabulator, followed by an asterisk, followed by 
+a space character and then the commit message, like this:
+
+        * asdf
+
+Add a "#######..." line as delimiter
+

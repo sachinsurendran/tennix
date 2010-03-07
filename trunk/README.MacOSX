@@ -1,0 +1,28 @@
+Tennix can now be built on MacOS X, too! :)
+
+Install Xcode tools and install the *.dmg packages
+from www.libsdl.org:
+
+http://www.libsdl.org/
+http://www.libsdl.org/projects/SDL_mixer/
+http://www.libsdl.org/projects/SDL_image/
+
+At the time of writing, the files you need are:
+  SDL-1.2.11.dmg
+  SDL_mixer-1.2.7.dmg
+  SDL_image-1.2.5.dmg
+
+You have to copy each ".framework" component from
+the corresponding disk image to /Library/Frameworks/.
+
+For building, use the following commands:
+
+  TARGET=cocoa make
+  TARGET=cocoa make release-osx
+
+The resulting binary will be called Tennix.app.
+
+
+Enjoy,
+          thp     2007-05-17
+
