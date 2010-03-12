@@ -38,8 +38,8 @@ GameState *gamestate_new() {
     GameState template = {
         { 0, 0, 0.0, 0.0, 0.0 },
         { 0, 0, 0, 0, 0 },
-        { GAME_X_MIN-RACKET_X_MID*2, GAME_Y_MID, 0, 0, 1, DESIRE_NORMAL, PLAYER_TYPE_HUMAN, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true },
-        { GAME_X_MAX+RACKET_X_MID*2, GAME_Y_MID, 0, 0, 0, DESIRE_NORMAL, PLAYER_TYPE_AI, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true },
+        { GAME_X_MIN-RACKET_X_MID*2, GAME_Y_MID, 0, 0, 1, DESIRE_NORMAL, PLAYER_TYPE_HUMAN, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /*point*/ },
+        { GAME_X_MAX+RACKET_X_MID*2, GAME_Y_MID, 0, 0, 0, DESIRE_NORMAL, PLAYER_TYPE_AI, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /* point */},
         0,
         0,
         0,
@@ -91,6 +91,14 @@ GameState *gamestate_new() {
     return s;
 }
 
+void extract_game_data(GameState *s)
+{
+    //printf("Ball        X = %f  Y=%f\n", s->ball.x, s->ball.y);
+    //printf("Opponent    X = %f  Y=%f\n", s->player2.x, s->player2.y);
+    printf("Hit count = %d\n", s->player1.number_of_hits);
+    printf(" Player point = %d, Opponent point = %d\n", s->player1.point_count, s->player2.point_count);
+}
+
 
 void gameloop(GameState *s) {
     strcpy(s->game_score_str, format_game(s));
@@ -131,6 +139,7 @@ void gameloop(GameState *s) {
 
         while( accumulator >= dt) {
             quit = step(s);
+            extract_game_data(s);
             s->time += dt;
             s->windtime += s->wind*dt;
             accumulator -= dt;
@@ -253,6 +262,7 @@ bool step( GameState* s) {
                 s->ball.jump += 1.0-2.0*(s->player1.state<5);
                 s->play_sound = SOUND_RACKET;
                 pan_sample(SOUND_RACKET, 0.4);
+                s->player1.number_of_hits++; // Every time player hits the ball , count it
             } else if( s->ball.move_x >= 0 && IS_NEAR_X( s->player2.x, s->ball.x) && IS_NEAR_Y( s->player2.y, s->ball.y) && s->player2.state && s->referee != REFEREE_OUT) {
                 s->ball.x = GAME_X_MAX;
                 if( s->player2.state == PLAYER_STATE_MAX) {
@@ -407,17 +417,22 @@ void render( GameState* s) {
     }
     if( s->winner != WINNER_NONE) {
         if( !s->is_over) {
+#ifdef GRAPHICS
             start_fade();
+#endif
             s->is_over = true;
         }
+#ifdef GRAPHICS
         clear_screen();
         store_screen();
         show_sprite( GR_RACKET, 2*(s->winner-1), 4, WIDTH/2 - get_image_width( GR_RACKET)/8, HEIGHT/2 - get_image_height( GR_RACKET), 255);
         sprintf( s->game_score_str, "player %d wins the match with %s", s->winner, format_sets( s));
         font_draw_string( GR_DKC2_FONT, s->game_score_str, (WIDTH-font_get_string_width( GR_DKC2_FONT, s->game_score_str))/2, HEIGHT/2 + 30, s->time/20, ANIMATION_WAVE | ANIMATION_BUNGEE);
         updatescr();
+#endif
         return;
     }
+#ifdef GRAPHICS
     if (s->old_court_type != s->court_type || s->text_changed || s->old_referee != s->referee) {
         clear_screen();
         fill_image(s->court_type, 120, 120, 400, 250);
@@ -532,6 +547,7 @@ void render( GameState* s) {
     }
 
     updatescr();
+#endif /* GRAPHICS */
 }
 
 void limit_value( float* value, float min, float max) {
@@ -758,6 +774,9 @@ float ngram_predictor( GameState* s) {
 void score_game( GameState* s, bool player1_scored) {
     Player* winner = (player1_scored)?(&(s->player1)):(&(s->player2));
     Player* loser = (player1_scored)?(&(s->player2)):(&(s->player1));
+
+    /* Increment the points per player */
+    winner->point_count++;
 
     if( s->current_set >= SETS_TO_WIN*2-1) {
         return;
