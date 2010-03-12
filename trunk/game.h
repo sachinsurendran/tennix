@@ -92,6 +92,8 @@ typedef struct {
     int mouse_y; /* y position of mouse */
     float accelerate; /* a value [0..1] how fast the user accelerates */
     bool mouse_locked; /* on start, ignore unpressed mouse state */
+    int number_of_hits; /* Count the number of times the plaer hits the ball */
+    int point_count; /* Count of every win, this increments every time player scores */
 } Player;
 
 enum {
