@@ -112,4 +112,7 @@ typedef struct {
 
 #define M_POS_BUTTON(button,mx,my) (mx>=button.x && mx<=button.x+button.w && my>=button.y && my<=button.y+button.h)
 
+/* For debugging */
+#define GRAPHICS
+
 #endif

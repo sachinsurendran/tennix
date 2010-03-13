@@ -94,6 +94,8 @@ typedef struct {
     bool mouse_locked; /* on start, ignore unpressed mouse state */
     int number_of_hits; /* Count the number of times the plaer hits the ball */
     int point_count; /* Count of every win, this increments every time player scores */
+    float ball_proximity; /* figure  of proximity to ball */
+    unsigned int ball_proximity_count; /* count of times the ball proximity was measured, for averages */
 } Player;
 
 enum {
