@@ -98,6 +98,22 @@ GameState *gamestate_new() {
     return s;
 }
 
+#define HIT_WEIGHTAGE        5
+#define POINT_WEIGHTAGE      50
+#define PROXIMITY_WEIGHTAGE  0.5
+
+int calculate_fitness(int player, GameState *s)
+{
+    switch (player) {
+
+        case PLAYER1:
+            return ((s->player1.number_of_hits * HIT_WEIGHTAGE) + (s->player1.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player1.ball_proximity));
+
+        case PLAYER2:
+            return ((s->player2.number_of_hits * HIT_WEIGHTAGE) + (s->player2.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player2.ball_proximity));
+    }
+}
+
 void extract_game_data(GameState *s)
 {
 //    printf("Ball        X = %f \t Y=%f\n", s->ball.x, s->ball.y);
@@ -105,7 +121,8 @@ void extract_game_data(GameState *s)
 //    printf("Opponent    X = %f \t Y=%f\n", s->player2.x, s->player2.y);
 //    printf("Delta = %f\n", s->player2.x - s->ball.x);
  //   printf("Hit count = %d\n", s->player1.number_of_hits);
- //   printf(" Player point = %d, Opponent point = %d\n", s->player1.point_count, s->player2.point_count);
+      printf(" Player point = %d, Opponent point = %d\n", s->player1.point_count, s->player2.point_count);
+      printf("Fitness PLAYER1 = %d Fitness PLAYER2 = %d\n", calculate_fitness(PLAYER1, s), calculate_fitness(PLAYER2, s));
 }
 
 
@@ -136,7 +153,7 @@ void gameloop(GameState *s) {
     frames = 0;
     ft = SDL_GetTicks();
 #endif
-    while( !quit) {
+    while( !quit ) {
 #ifdef GRAPHICS
         TIME;
         nt = SDL_GetTicks();
@@ -153,7 +170,7 @@ void gameloop(GameState *s) {
             TIME;
             quit = step(s);
             TIME;
-            extract_game_data(s);
+            //extract_game_data(s);
 #ifdef GRAPHICS
             s->time += dt;
             s->windtime += s->wind*dt;
@@ -184,6 +201,8 @@ void gameloop(GameState *s) {
         TIME;
     }
 
+    extract_game_data(s);
+
     clear_screen();
     store_screen();
 
@@ -192,6 +211,7 @@ void gameloop(GameState *s) {
 }
 
 #define X_CLOSE_TO_PLAYER1 70
+#define X_CLOSE_TO_PLAYER2 550
 #define FALSE 0
 #define TRUE  1
 
@@ -202,24 +222,55 @@ void update_players_dist_from_ball(GameState* s)
      * it will reward shots from center of bat, so make sure other rewards like
      * hit and point is very high
      */
-    static int measure_to_be_taken = TRUE; /* Take proximity measure once, for each ball coming out way */
-    if ((measure_to_be_taken == TRUE) && (s->ball.x < X_CLOSE_TO_PLAYER1)) {
+    static int player1_measure_to_be_taken = TRUE; /* Take proximity measure once, for each ball coming out way */
+    static int player2_measure_to_be_taken = TRUE; /* Take proximity measure once, for each ball coming out way */
+
+
+    if ((player1_measure_to_be_taken == TRUE) && (s->ball.x < X_CLOSE_TO_PLAYER1)) {
         unsigned int ball_proximity_count = s->player1.ball_proximity_count;
         float ball_proximity = s->player1.ball_proximity;
-        /* Update the Average */
+
+        /* Update the Average for player1 */
         ball_proximity = ((ball_proximity * ball_proximity_count) + ((s->ball.y - s->player1.y) * (s->ball.y - s->player1.y)))/(ball_proximity_count + 1); /* Sq root to get mean square */
-        printf("Old Average = %f   New Average = %f\n", s->player1.ball_proximity, ball_proximity);
-        printf(" GAME SCORE: %s   SET SCORE: %s\n", s->game_score_str, s->sets_score_str);
+
         s->player1.ball_proximity_count++;
         s->player1.ball_proximity = ball_proximity;
-        measure_to_be_taken = FALSE;
+        player1_measure_to_be_taken = FALSE;
+
+        //printf("1: Old Average = %f   New Average = %f\n", s->player1.ball_proximity, ball_proximity);
     }
 
-    if ((measure_to_be_taken == FALSE) && (s->ball.x > X_CLOSE_TO_PLAYER1 + 10))
+    if ((player2_measure_to_be_taken == TRUE) && (s->ball.x > X_CLOSE_TO_PLAYER2)) {
+        unsigned int ball_proximity_count = s->player2.ball_proximity_count;
+        float ball_proximity = s->player2.ball_proximity;
+
+        /* Update the Average for player2 */
+        ball_proximity = ((ball_proximity * ball_proximity_count) + ((s->ball.y - s->player2.y) * (s->ball.y - s->player2.y)))/(ball_proximity_count + 1);
+
+        s->player2.ball_proximity_count++;
+        s->player2.ball_proximity = ball_proximity;
+        player2_measure_to_be_taken = FALSE;
+
+        //printf("2: Old Average = %f   New Average = %f\n", s->player2.ball_proximity, ball_proximity);
+    }
+
+    printf(" GAME SCORE: %s   SET SCORE: %s\n", s->game_score_str, s->sets_score_str);
+    //printf("Fitness PLAYER1 = %d Fitness PLAYER2 = %d\n", calculate_fitness(PLAYER1, s), calculate_fitness(PLAYER2, s));
+    //printf(" Player point = %d, Opponent point = %d\n", s->player1.point_count, s->player2.point_count);
+
+
+    if ((player1_measure_to_be_taken == FALSE) && (s->ball.x > X_CLOSE_TO_PLAYER1 + 10))
     {
         // Make sure ball is hit, This is to ensure we dont measure many times while 
         // being served
-        measure_to_be_taken = TRUE;
+        player1_measure_to_be_taken = TRUE;
+    }
+
+    if ((player2_measure_to_be_taken == FALSE) && (s->ball.x < X_CLOSE_TO_PLAYER2 - 10))
+    {
+        // Make sure ball is hit, This is to ensure we dont measure many times while 
+        // being served
+        player2_measure_to_be_taken = TRUE;
     }
 }
 
@@ -269,7 +320,8 @@ bool step( GameState* s)
 
     if( IS_OUT_X(s->ball.x) || IS_OFFSCREEN_Y(s->ball.y)) {
         /* Ball has gone out */
-        if( IS_OFFSCREEN( s->ball.x, s->ball.y)) {
+        if( IS_OFFSCREEN( s->ball.x, s->ball.y)) 
+        {
             /* Ball is offscreen */
             s->player1_serves = s->player1.responsible;// If player1 hit the shot give him the serve
 
@@ -358,6 +410,7 @@ bool step( GameState* s)
                 s->player1.responsible = !(s->player2.responsible = 1);
                 s->ball.jump += 1.0-2.0*(s->player2.state<5);
                 s->play_sound = SOUND_RACKET;
+                s->player2.number_of_hits++;
                 pan_sample(SOUND_RACKET, 0.6);
             }
         }
@@ -469,7 +522,7 @@ bool step( GameState* s)
         s->was_stopped = true;
     }
      
-    if( keys[SDLK_ESCAPE] || keys['q']) return true;
+    if( keys[SDLK_ESCAPE] || keys['q'] || (s->winner != WINNER_NONE) ) return true; // sachins : added to make finish criterion
     
     limit_value( &s->player1.y, PLAYER_Y_MIN, PLAYER_Y_MAX);
     limit_value( &s->player2.y, PLAYER_Y_MIN, PLAYER_Y_MAX);

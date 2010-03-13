@@ -108,7 +108,9 @@ static int voice_queue_position = 0;
 
 int voice_finished_flag = 1;
 
-void init_sound() {
+void init_sound() 
+{
+#ifdef SOUND
     int i;
     char *d;
     Mix_Chunk* data;
@@ -160,10 +162,12 @@ void init_sound() {
 
     /* for Voice Queue processing */
     Mix_ChannelFinished(voice_channel_finished);
+#endif 
 }
 
 void play_sample_n(sound_id id, int n)
 {
+#ifdef SOUND
     if (id >= SOUND_MAX) {
         fprintf(stderr, "Cannot play sound #%d.\n", id);
         return;
@@ -179,50 +183,62 @@ void play_sample_n(sound_id id, int n)
     if (id >= SOUND_RACKET_FIRST && id <= SOUND_RACKET_LAST) {
         stop_sample(SOUND_APPLAUSE);
     }
+#endif 
 }
 
 void stop_sample(sound_id id)
 {
+#ifdef SOUND
     Mix_FadeOutChannel(CHANNEL_BY_ID(id), FADE_OUT_MS);
+#endif 
 }
 
 void pan_sample(sound_id id, float position)
 {
+#ifdef SOUND
     if (position == 0.5) {
         Mix_SetPanning(CHANNEL_BY_ID(id), 255, 255);
     }
     else {
         Mix_SetPanning(CHANNEL_BY_ID(id), 255*(1.0-position), 255*(position));
     }
+#endif 
 }
 
 void voice_clear()
 {
+#ifdef SOUND
     voice_queue_size = 0;
     Mix_HaltChannel(CHANNEL_VOICE);
+#endif 
 }
 
 void voice_enqueue(sound_id id)
 {
+#ifdef SOUND
     if (voice_queue_size < VOICE_QUEUE_MAX) {
         voice_queue[voice_queue_size++] = id;
     } else {
         fprintf(stderr, "Voice queue overflow. Skipping: %d\n", id);
     }
+#endif 
 }
 
 void voice_say()
 {
+#ifdef SOUND
     if (voice_queue_size > 0) {
         voice_queue_position = 0;
         voice_finished_flag = 0;
         Mix_PlayChannel(CHANNEL_VOICE, sounds[voice_queue[voice_queue_position]].data, 0);
         voice_queue_position++;
     }
+#endif 
 }
 
 void voice_say_list(int n, ...)
 {
+#ifdef SOUND
     va_list ap;
     int i;
     sound_id id;
@@ -236,10 +252,12 @@ void voice_say_list(int n, ...)
     }
     va_end(ap);
     voice_say();
+#endif 
 }
 
 void voice_channel_finished(int channel)
 {
+#ifdef SOUND
     if (channel == CHANNEL_VOICE) {
         if (voice_queue_position < voice_queue_size) {
             Mix_PlayChannel(CHANNEL_VOICE, sounds[voice_queue[voice_queue_position]].data, 0);
@@ -249,5 +267,6 @@ void voice_channel_finished(int channel)
             voice_queue_position = 0;
         }
     }
+#endif 
 }
 
