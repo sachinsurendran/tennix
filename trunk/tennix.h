@@ -111,8 +111,12 @@ typedef struct {
 } MenuButton;
 
 #define M_POS_BUTTON(button,mx,my) (mx>=button.x && mx<=button.x+button.w && my>=button.y && my<=button.y+button.h)
+/* Added by sachins */
+#define PLAYER1 1
+#define PLAYER2 2
 
 /* For debugging */
-#define GRAPHICS
+// Comment GRAPHICS if we dont need any display
+//#define GRAPHICS
 
 #endif
