@@ -81,7 +81,7 @@ typedef struct {
     float y;
     unsigned char state;
     unsigned int score;
-    bool responsible; /* responsible for the next fault (if any) */
+    bool responsible; /* responsible for the next fault (if any), When player hit the ball it becomes his responsiblity */
     unsigned char desire; /* what the player aims to do (0=normal, 1=upper edge, 2=lower edge)*/
     bool type; /* is this player ai-controlled or human? */
     float ball_dest; /* prospective y-position of ball */

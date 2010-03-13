@@ -45,12 +45,12 @@ GameState *gamestate_new() {
     GameState template = {
         { 0, 0, 0.0, 0.0, 0.0 },
         { 0, 0, 0, 0, 0 },
-        { GAME_X_MIN-RACKET_X_MID*2, GAME_Y_MID, 0, 0, 1, DESIRE_NORMAL, PLAYER_TYPE_HUMAN, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /*point*/, 0 , 0},
-        { GAME_X_MAX+RACKET_X_MID*2, GAME_Y_MID, 0, 0, 0, DESIRE_NORMAL, PLAYER_TYPE_AI, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /* point */, 0, 0},
+        { GAME_X_MIN-RACKET_X_MID*2, GAME_Y_MID, 0, 0, 0, DESIRE_NORMAL, PLAYER_TYPE_HUMAN, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /*point*/, 0 , 0},
+        { GAME_X_MAX+RACKET_X_MID*2, GAME_Y_MID, 0, 0, 1, DESIRE_NORMAL, PLAYER_TYPE_AI, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /* point */, 0, 0},
         0,
         0,
         0,
-        true,
+        false,
         "welcome to tennix " VERSION,
         { 0 },
         { 0 },
@@ -209,6 +209,7 @@ void update_players_dist_from_ball(GameState* s)
         /* Update the Average */
         ball_proximity = ((ball_proximity * ball_proximity_count) + ((s->ball.y - s->player1.y) * (s->ball.y - s->player1.y)))/(ball_proximity_count + 1); /* Sq root to get mean square */
         printf("Old Average = %f   New Average = %f\n", s->player1.ball_proximity, ball_proximity);
+        printf(" GAME SCORE: %s   SET SCORE: %s\n", s->game_score_str, s->sets_score_str);
         s->player1.ball_proximity_count++;
         s->player1.ball_proximity = ball_proximity;
         measure_to_be_taken = FALSE;
@@ -222,8 +223,22 @@ void update_players_dist_from_ball(GameState* s)
     }
 }
 
+void set_player_to_always_serve(int player, GameState* s)
+{
+    switch(player) {
 
-bool step( GameState* s) {
+        case PLAYER1:
+            s->player1_serves = true;
+            break;
+
+        case PLAYER2:
+            s->player1_serves = false;
+    }
+}
+
+
+bool step( GameState* s) 
+{
     Uint8 *keys;
     SDL_Event e;
 
@@ -253,8 +268,16 @@ bool step( GameState* s) {
     }
 
     if( IS_OUT_X(s->ball.x) || IS_OFFSCREEN_Y(s->ball.y)) {
+        /* Ball has gone out */
         if( IS_OFFSCREEN( s->ball.x, s->ball.y)) {
-            s->player1_serves = s->player1.responsible;
+            /* Ball is offscreen */
+            s->player1_serves = s->player1.responsible;// If player1 hit the shot give him the serve
+
+            /*
+             * To facililtate learning, always make AI player to serve 
+             * But points calculations are as before, no change there
+             */
+            set_player_to_always_serve(PLAYER2, s);
 
             score_game( s, s->player2.responsible);
             strcpy( s->game_score_str, format_game( s));
@@ -308,6 +331,7 @@ bool step( GameState* s) {
                 s->history_is_locked = true;
             }
             if( s->ball.move_x <= 0 && IS_NEAR_X( s->player1.x, s->ball.x) && IS_NEAR_Y( s->player1.y, s->ball.y) && s->player1.state && s->referee != REFEREE_OUT) {
+                /* Player 1 hit the ball */
                 s->ball.x = GAME_X_MIN;
                 if( s->player1.state == PLAYER_STATE_MAX) {
                     s->ball.move_x = PLAYER_POWERSHOT;
@@ -315,12 +339,14 @@ bool step( GameState* s) {
                     s->ball.move_x = 2.5 + 2.0*s->player1.state/PLAYER_STATE_MAX;
                 }
                 s->ball.move_y = get_move_y( s, 1);
+                /* Make Player 1 responsible for this shot */
                 s->player2.responsible = !(s->player1.responsible = 1);
                 s->ball.jump += 1.0-2.0*(s->player1.state<5);
                 s->play_sound = SOUND_RACKET;
                 pan_sample(SOUND_RACKET, 0.4);
                 s->player1.number_of_hits++; // Every time player hits the ball , count it
             } else if( s->ball.move_x >= 0 && IS_NEAR_X( s->player2.x, s->ball.x) && IS_NEAR_Y( s->player2.y, s->ball.y) && s->player2.state && s->referee != REFEREE_OUT) {
+                /* Player 2 hit the ball */
                 s->ball.x = GAME_X_MAX;
                 if( s->player2.state == PLAYER_STATE_MAX) {
                     s->ball.move_x = -PLAYER_POWERSHOT;
@@ -328,6 +354,7 @@ bool step( GameState* s) {
                     s->ball.move_x = -(2.5 + 2.0*s->player2.state/PLAYER_STATE_MAX);
                 }
                 s->ball.move_y = get_move_y( s, 2);
+                /* Now make player 2 responsible for this shot */
                 s->player1.responsible = !(s->player2.responsible = 1);
                 s->ball.jump += 1.0-2.0*(s->player2.state<5);
                 s->play_sound = SOUND_RACKET;
@@ -340,6 +367,7 @@ bool step( GameState* s) {
 
     SDL_PollEvent( &e);
     keys = SDL_GetKeyState( NULL);
+#ifdef JOYSTICK
     switch(e.type) {
         case SDL_JOYAXISMOTION:
             if (e.jaxis.axis == JOYSTICK_Y_AXIS) {
@@ -354,7 +382,9 @@ bool step( GameState* s) {
             }
             break;
     }
+#endif /* JOYSTICK */
 
+#ifdef GRAPHICS
     if( s->time%50==0) {
         /**
          * Maemo keys:
@@ -390,8 +420,9 @@ bool step( GameState* s) {
             s->court_type = GR_CTT_LAST;
         }
     }
+#endif
 
-    if(!(SDL_GetTicks() < fading_start+FADE_DURATION) && !s->is_over) {
+    if(/*!(SDL_GetTicks() < fading_start+FADE_DURATION) &&*/ !s->is_over) { // Part of graphics 
         if( s->player1.type == PLAYER_TYPE_HUMAN) {
            input_human( &s->player1,
                    keys['w'] || keys[SDLK_UP] || s->joystick_y < -JOYSTICK_TRESHOLD,
@@ -675,6 +706,7 @@ void input_human( Player* player, bool up, bool down, bool hit, bool use_mouse, 
     int diff = PLAYER_MOVE_Y;
     int mb;
 
+#ifdef MOUSE
     /**
      * Only use mouse control if the user isn't pressing any buttons
      * this way, keyboard control still works when mouse control is
@@ -705,6 +737,9 @@ void input_human( Player* player, bool up, bool down, bool hit, bool use_mouse, 
             hit = true;
         }
     }
+#endif
+
+#ifdef JOTSTICK
 
     if (fabsf(s->joystick_y) > JOYSTICK_TRESHOLD) {
         diff = PLAYER_MOVE_Y*fabsf(s->joystick_y)/40.0;
@@ -712,6 +747,7 @@ void input_human( Player* player, bool up, bool down, bool hit, bool use_mouse, 
             diff = PLAYER_MOVE_Y;
         }
     }
+#endif
 
     if (up) {
         player->y -= fminf(diff, diff*player->accelerate);
@@ -790,6 +826,7 @@ void game_setup_serve( GameState* s) {
     s->ball.move_y = 0.0;
 
     if( s->player1_serves) {
+        /* Base on serve, decide who is responsible for the ball */
         s->player1.responsible = true;
         s->player1.ball_dest = 0.0;
         s->ball.x = GAME_X_MIN-RACKET_X_MID*1.5;
