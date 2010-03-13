@@ -514,7 +514,9 @@ void render( GameState* s) {
         clear_screen();
         store_screen();
         show_sprite( GR_RACKET, 2*(s->winner-1), 4, WIDTH/2 - get_image_width( GR_RACKET)/8, HEIGHT/2 - get_image_height( GR_RACKET), 255);
+#endif
         sprintf( s->game_score_str, "player %d wins the match with %s", s->winner, format_sets( s));
+#ifdef GRAPHICS
         font_draw_string( GR_DKC2_FONT, s->game_score_str, (WIDTH-font_get_string_width( GR_DKC2_FONT, s->game_score_str))/2, HEIGHT/2 + 30, s->time/20, ANIMATION_WAVE | ANIMATION_BUNGEE);
         updatescr();
 #endif
@@ -954,7 +956,9 @@ char* format_game( GameState* s) {
 
 char* format_status( GameState* s) {
     static char status[100];
-    static const char* set_names[] = { "first", "second", "third", "fourth", "fifth" };
+    static const char* set_names[] = { "first", "second", "third", "fourth", "fifth" , "sixth", "seventh", "eighth"};
+
+    /* Noticed a seg fault bug here: playing ai vs ai for 6 sets, looks like it got fixed by adding a few more set_names */
 
     sprintf( status, "%d:%d in %s set", s->player1.sets[s->current_set], s->player2.sets[s->current_set], set_names[s->current_set]);
 

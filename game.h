@@ -28,7 +28,7 @@
 #include "tennix.h"
 #include "sound.h"
 
-#define SETS_TO_WIN 3
+#define SETS_TO_WIN 6
 
 #define NGRAM_STEPS 6
 
