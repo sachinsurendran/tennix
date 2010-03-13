@@ -23,12 +23,19 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
+#include <sys/timeb.h>
 
 #include "tennix.h"
 #include "game.h"
 #include "graphics.h"
 #include "input.h"
 #include "sound.h"
+
+time_t time_now;
+struct timeb tp;
+
+#define TIME //ftime(&tp);printf("%s:%d: Time now = %1d.%d\n", __FUNCTION__, __LINE__,tp.time,tp.millitm )
 
 
 GameState *gamestate_new() {
@@ -38,8 +45,8 @@ GameState *gamestate_new() {
     GameState template = {
         { 0, 0, 0.0, 0.0, 0.0 },
         { 0, 0, 0, 0, 0 },
-        { GAME_X_MIN-RACKET_X_MID*2, GAME_Y_MID, 0, 0, 1, DESIRE_NORMAL, PLAYER_TYPE_HUMAN, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /*point*/ },
-        { GAME_X_MAX+RACKET_X_MID*2, GAME_Y_MID, 0, 0, 0, DESIRE_NORMAL, PLAYER_TYPE_AI, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /* point */},
+        { GAME_X_MIN-RACKET_X_MID*2, GAME_Y_MID, 0, 0, 1, DESIRE_NORMAL, PLAYER_TYPE_HUMAN, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /*point*/, 0 , 0},
+        { GAME_X_MAX+RACKET_X_MID*2, GAME_Y_MID, 0, 0, 0, DESIRE_NORMAL, PLAYER_TYPE_AI, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /* point */, 0, 0},
         0,
         0,
         0,
@@ -93,10 +100,12 @@ GameState *gamestate_new() {
 
 void extract_game_data(GameState *s)
 {
-    //printf("Ball        X = %f  Y=%f\n", s->ball.x, s->ball.y);
-    //printf("Opponent    X = %f  Y=%f\n", s->player2.x, s->player2.y);
-    printf("Hit count = %d\n", s->player1.number_of_hits);
-    printf(" Player point = %d, Opponent point = %d\n", s->player1.point_count, s->player2.point_count);
+//    printf("Ball        X = %f \t Y=%f\n", s->ball.x, s->ball.y);
+//    printf("Proximity Avg = %f \n", s->player1.ball_proximity/s->player1.ball_proximity_count);
+//    printf("Opponent    X = %f \t Y=%f\n", s->player2.x, s->player2.y);
+//    printf("Delta = %f\n", s->player2.x - s->ball.x);
+ //   printf("Hit count = %d\n", s->player1.number_of_hits);
+ //   printf(" Player point = %d, Opponent point = %d\n", s->player1.point_count, s->player2.point_count);
 }
 
 
@@ -128,7 +137,10 @@ void gameloop(GameState *s) {
     ft = SDL_GetTicks();
 #endif
     while( !quit) {
+#ifdef GRAPHICS
+        TIME;
         nt = SDL_GetTicks();
+        TIME;
         diff = nt-ot;
         if( diff > 2000) {
             diff = 0;
@@ -136,19 +148,26 @@ void gameloop(GameState *s) {
 
         accumulator += diff;
         ot = nt;
-
         while( accumulator >= dt) {
+#endif
+            TIME;
             quit = step(s);
+            TIME;
             extract_game_data(s);
+#ifdef GRAPHICS
             s->time += dt;
             s->windtime += s->wind*dt;
             accumulator -= dt;
-
+#endif
             if( s->was_stopped) {
+#ifdef GRAPHICS
                 ot = SDL_GetTicks();
+#endif
                 s->was_stopped = false;
             }
+#ifdef GRAPHICS
         }
+#endif
         if (s->timelimit != 0 && s->time >= s->timelimit) {
             quit = 1;
         }
@@ -159,8 +178,10 @@ void gameloop(GameState *s) {
         }
         frames++;
 #endif
+        TIME;
 
         render(s);
+        TIME;
     }
 
     clear_screen();
@@ -170,9 +191,43 @@ void gameloop(GameState *s) {
     stop_sample(SOUND_RAIN);
 }
 
+#define X_CLOSE_TO_PLAYER1 70
+#define FALSE 0
+#define TRUE  1
+
+void update_players_dist_from_ball(GameState* s)
+{
+    /*
+     * NOTE: The downside of having high weightage for ball proximity is
+     * it will reward shots from center of bat, so make sure other rewards like
+     * hit and point is very high
+     */
+    static int measure_to_be_taken = TRUE; /* Take proximity measure once, for each ball coming out way */
+    if ((measure_to_be_taken == TRUE) && (s->ball.x < X_CLOSE_TO_PLAYER1)) {
+        unsigned int ball_proximity_count = s->player1.ball_proximity_count;
+        float ball_proximity = s->player1.ball_proximity;
+        /* Update the Average */
+        ball_proximity = ((ball_proximity * ball_proximity_count) + ((s->ball.y - s->player1.y) * (s->ball.y - s->player1.y)))/(ball_proximity_count + 1); /* Sq root to get mean square */
+        printf("Old Average = %f   New Average = %f\n", s->player1.ball_proximity, ball_proximity);
+        s->player1.ball_proximity_count++;
+        s->player1.ball_proximity = ball_proximity;
+        measure_to_be_taken = FALSE;
+    }
+
+    if ((measure_to_be_taken == FALSE) && (s->ball.x > X_CLOSE_TO_PLAYER1 + 10))
+    {
+        // Make sure ball is hit, This is to ensure we dont measure many times while 
+        // being served
+        measure_to_be_taken = TRUE;
+    }
+}
+
+
 bool step( GameState* s) {
     Uint8 *keys;
     SDL_Event e;
+
+    update_players_dist_from_ball(s); /* Keep the statistics of player closeness to ball */
    
     if( get_phase( s) < 1.0) {
         if( !s->ground.jump) {
@@ -224,7 +279,9 @@ bool step( GameState* s) {
 
             game_setup_serve( s);
             s->play_sound = SOUND_APPLAUSE;
+#ifdef GRAPHICS
             SDL_Delay( 500);
+#endif
             s->was_stopped = true;
             s->history_size = 0;
             s->history_is_locked = 0;
