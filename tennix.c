@@ -217,6 +217,7 @@ int main( int argc, char** argv) {
         srand((unsigned)time(NULL));
     }
 
+#ifdef GRAPHICS
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) == -1) {
         fprintf( stderr, "Can't init SDL:  %s\n", SDL_GetError());
         exit( 1);
@@ -231,10 +232,10 @@ int main( int argc, char** argv) {
     SDL_WM_SetCaption( "Tennix " VERSION, "Tennix");
     SDL_ShowCursor( SDL_DISABLE);
     SDL_EnableKeyRepeat (SDL_DEFAULT_REPEAT_DELAY, 1);
-
     init_graphics();
     init_sound();
     init_joystick();
+#endif
 
 #ifdef ENABLE_FPS_LIMIT
     frames = 0;
