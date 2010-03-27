@@ -32,6 +32,7 @@
 #include "sound.h"
 #include "tennix_server.h"
 
+
 time_t time_now;
 struct timeb tp;
 
@@ -162,7 +163,7 @@ void gameloop(GameState *s) {
     ft = SDL_GetTicks();
 #endif
     while( !quit ) {
-//#ifdef GRAPHICS
+#ifdef GRAPHICS
         if (display_on) {
             TIME;
             nt = SDL_GetTicks();
@@ -175,10 +176,10 @@ void gameloop(GameState *s) {
             accumulator += diff;
             ot = nt;
             while( accumulator >= dt) {
-//#endif
+#endif
                 quit = step(s);
                 //extract_game_data(s);
-//#ifdef GRAPHICS
+#ifdef GRAPHICS
                 s->time += dt;
                 s->windtime += s->wind*dt;
                 accumulator -= dt;
@@ -190,7 +191,7 @@ void gameloop(GameState *s) {
         } else {
             quit = step(s);
         }
-//#endif
+#endif
         if (s->timelimit != 0 && s->time >= s->timelimit) {
             quit = 1;
         }
@@ -364,11 +365,11 @@ bool step( GameState* s)
 
             game_setup_serve( s);
             s->play_sound = SOUND_APPLAUSE;
-//#ifdef GRAPHICS
+#ifdef GRAPHICS
             if (display_on){
                 SDL_Delay( 500);
             }
-//#endif
+#endif
             s->was_stopped = true;
             s->history_size = 0;
             s->history_is_locked = 0;
@@ -490,7 +491,7 @@ bool step( GameState* s)
     }
 #endif /* JOYSTICK */
 
-//#ifdef GRAPHICS
+#ifdef GRAPHICS
 if(display_on) {
     if( s->time%50==0) {
         /**
@@ -528,7 +529,7 @@ if(display_on) {
         }
     }
 }
-//#endif
+#endif
 
     if(/*!(SDL_GetTicks() < fading_start+FADE_DURATION) &&*/ !s->is_over) { // Part of graphics 
         if( s->player1.type == PLAYER_TYPE_HUMAN || s->player1.type == PLAYER_TYPE_DARWIN ) {
@@ -613,31 +614,31 @@ void render( GameState* s) {
     }
     if( s->winner != WINNER_NONE) {
         if( !s->is_over) {
-//#ifdef GRAPHICS
+#ifdef GRAPHICS
             if (display_on) {
                 start_fade();
             }
-//#endif
+#endif
             s->is_over = true;
         }
-//#ifdef GRAPHICS
+#ifdef GRAPHICS
         if (display_on)
         {
             clear_screen();
             store_screen();
             show_sprite( GR_RACKET, 2*(s->winner-1), 4, WIDTH/2 - get_image_width( GR_RACKET)/8, HEIGHT/2 - get_image_height( GR_RACKET), 255);
         }
-//#endif
+#endif
         sprintf( s->game_score_str, "player %d wins the match with %s", s->winner, format_sets( s));
-//#ifdef GRAPHICS
+#ifdef GRAPHICS
         if(display_on) {
             font_draw_string( GR_DKC2_FONT, s->game_score_str, (WIDTH-font_get_string_width( GR_DKC2_FONT, s->game_score_str))/2, HEIGHT/2 + 30, s->time/20, ANIMATION_WAVE | ANIMATION_BUNGEE);
             updatescr();
         }
-//#endif
+#endif
         return;
     }
-//#ifdef GRAPHICS
+#ifdef GRAPHICS
 if(display_on) {
     if (s->old_court_type != s->court_type || s->text_changed || s->old_referee != s->referee) {
         clear_screen();
@@ -754,7 +755,7 @@ if(display_on) {
 
     updatescr();
 }
-//#endif /* GRAPHICS */
+#endif /* GRAPHICS */
 }
 
 void limit_value( float* value, float min, float max) {
