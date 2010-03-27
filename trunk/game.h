@@ -28,7 +28,7 @@
 #include "tennix.h"
 #include "sound.h"
 
-#define SETS_TO_WIN 2
+#define SETS_TO_WIN 1
 
 #define NGRAM_STEPS 6
 
@@ -101,6 +101,7 @@ typedef struct {
 enum {
     PLAYER_TYPE_HUMAN,
     PLAYER_TYPE_AI,
+    PLAYER_TYPE_DARWIN
 };
 
 enum {
@@ -221,6 +222,8 @@ char* format_sets( GameState*);
 char* format_game( GameState*);
 char* format_status( GameState*);
 int game_get_winner( GameState*);
+void extract_game_data(GameState *s);
+float calculate_fitness(int player, GameState *s);
 
 #endif
 

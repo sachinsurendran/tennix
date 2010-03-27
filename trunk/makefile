@@ -59,8 +59,8 @@ else
   CFLAGS += $$(sdl-config --cflags)
 endif
 
-SRC = tennix.c game.c graphics.c input.c sound.c
-OBJ = tennix.o game.o graphics.o input.o sound.o archive-lib.o
+SRC = tennix.c game.c graphics.c input.c sound.c tennix_server.c
+OBJ = tennix.o game.o graphics.o input.o sound.o archive-lib.o tennix_server.o
 ifeq ($(MSYSTEM),MINGW32)
   OBJ += tennixres.o
 endif
