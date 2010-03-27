@@ -35,6 +35,8 @@
 time_t time_now;
 struct timeb tp;
 
+int display_on = 0;
+
 #define TIME //ftime(&tp);printf("%s:%d: Time now = %1d.%d\n", __FUNCTION__, __LINE__,tp.time,tp.millitm )
 
 
@@ -160,37 +162,35 @@ void gameloop(GameState *s) {
     ft = SDL_GetTicks();
 #endif
     while( !quit ) {
-#ifdef GRAPHICS
-        TIME;
-        nt = SDL_GetTicks();
-        TIME;
-        diff = nt-ot;
-        if( diff > 2000) {
-            diff = 0;
-        }
-
-        accumulator += diff;
-        ot = nt;
-        while( accumulator >= dt) {
-#endif
+//#ifdef GRAPHICS
+        if (display_on) {
             TIME;
-            quit = step(s);
+            nt = SDL_GetTicks();
             TIME;
-            //extract_game_data(s);
-#ifdef GRAPHICS
-            s->time += dt;
-            s->windtime += s->wind*dt;
-            accumulator -= dt;
-#endif
-            if( s->was_stopped) {
-#ifdef GRAPHICS
-                ot = SDL_GetTicks();
-#endif
-                s->was_stopped = false;
+            diff = nt-ot;
+            if( diff > 2000) {
+                diff = 0;
             }
-#ifdef GRAPHICS
+
+            accumulator += diff;
+            ot = nt;
+            while( accumulator >= dt) {
+//#endif
+                quit = step(s);
+                //extract_game_data(s);
+//#ifdef GRAPHICS
+                s->time += dt;
+                s->windtime += s->wind*dt;
+                accumulator -= dt;
+                if( s->was_stopped) {
+                    ot = SDL_GetTicks();
+                    s->was_stopped = false;
+                }
+            }
+        } else {
+            quit = step(s);
         }
-#endif
+//#endif
         if (s->timelimit != 0 && s->time >= s->timelimit) {
             quit = 1;
         }
@@ -201,10 +201,9 @@ void gameloop(GameState *s) {
         }
         frames++;
 #endif
-        TIME;
-
-        render(s);
-        TIME;
+        if (display_on) {
+            render(s);
+        }
     }
 
     extract_game_data(s);
@@ -365,9 +364,11 @@ bool step( GameState* s)
 
             game_setup_serve( s);
             s->play_sound = SOUND_APPLAUSE;
-#ifdef GRAPHICS
-            SDL_Delay( 500);
-#endif
+//#ifdef GRAPHICS
+            if (display_on){
+                SDL_Delay( 500);
+            }
+//#endif
             s->was_stopped = true;
             s->history_size = 0;
             s->history_is_locked = 0;
@@ -489,7 +490,8 @@ bool step( GameState* s)
     }
 #endif /* JOYSTICK */
 
-#ifdef GRAPHICS
+//#ifdef GRAPHICS
+if(display_on) {
     if( s->time%50==0) {
         /**
          * Maemo keys:
@@ -525,7 +527,8 @@ bool step( GameState* s)
             s->court_type = GR_CTT_LAST;
         }
     }
-#endif
+}
+//#endif
 
     if(/*!(SDL_GetTicks() < fading_start+FADE_DURATION) &&*/ !s->is_over) { // Part of graphics 
         if( s->player1.type == PLAYER_TYPE_HUMAN || s->player1.type == PLAYER_TYPE_DARWIN ) {
@@ -610,24 +613,32 @@ void render( GameState* s) {
     }
     if( s->winner != WINNER_NONE) {
         if( !s->is_over) {
-#ifdef GRAPHICS
-            start_fade();
-#endif
+//#ifdef GRAPHICS
+            if (display_on) {
+                start_fade();
+            }
+//#endif
             s->is_over = true;
         }
-#ifdef GRAPHICS
-        clear_screen();
-        store_screen();
-        show_sprite( GR_RACKET, 2*(s->winner-1), 4, WIDTH/2 - get_image_width( GR_RACKET)/8, HEIGHT/2 - get_image_height( GR_RACKET), 255);
-#endif
+//#ifdef GRAPHICS
+        if (display_on)
+        {
+            clear_screen();
+            store_screen();
+            show_sprite( GR_RACKET, 2*(s->winner-1), 4, WIDTH/2 - get_image_width( GR_RACKET)/8, HEIGHT/2 - get_image_height( GR_RACKET), 255);
+        }
+//#endif
         sprintf( s->game_score_str, "player %d wins the match with %s", s->winner, format_sets( s));
-#ifdef GRAPHICS
-        font_draw_string( GR_DKC2_FONT, s->game_score_str, (WIDTH-font_get_string_width( GR_DKC2_FONT, s->game_score_str))/2, HEIGHT/2 + 30, s->time/20, ANIMATION_WAVE | ANIMATION_BUNGEE);
-        updatescr();
-#endif
+//#ifdef GRAPHICS
+        if(display_on) {
+            font_draw_string( GR_DKC2_FONT, s->game_score_str, (WIDTH-font_get_string_width( GR_DKC2_FONT, s->game_score_str))/2, HEIGHT/2 + 30, s->time/20, ANIMATION_WAVE | ANIMATION_BUNGEE);
+            updatescr();
+        }
+//#endif
         return;
     }
-#ifdef GRAPHICS
+//#ifdef GRAPHICS
+if(display_on) {
     if (s->old_court_type != s->court_type || s->text_changed || s->old_referee != s->referee) {
         clear_screen();
         fill_image(s->court_type, 120, 120, 400, 250);
@@ -742,7 +753,8 @@ void render( GameState* s) {
     }
 
     updatescr();
-#endif /* GRAPHICS */
+}
+//#endif /* GRAPHICS */
 }
 
 void limit_value( float* value, float min, float max) {
@@ -979,6 +991,14 @@ void score_game( GameState* s, bool player1_scored) {
 
     /* Increment the points per player */
     winner->point_count++;
+
+    if (s->player1.point_count > 3)
+    {
+        // Turn on display for good players
+        display_on = 1;
+    }else {
+        display_on = 0;
+    }
 
     if( s->current_set >= SETS_TO_WIN*2-1) {
         return;

@@ -98,6 +98,7 @@ enum {
 
 
 extern SDL_Surface *screen;
+extern int display_on;
 
 typedef struct {
     char *text;
