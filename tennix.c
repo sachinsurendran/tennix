@@ -36,6 +36,7 @@
 #include "graphics.h"
 #include "sound.h"
 #include "input.h"
+#include "tennix_server.h"
 
 SDL_Surface *screen;
 
@@ -158,6 +159,7 @@ int main( int argc, char** argv) {
     fprintf(stderr, "Tennix " VERSION "\n" COPYRIGHT "\n" URL "\n\n");
 
     bool do_help = false;
+    bool genetic_evolution = false;
     i = 1;
     while (i < argc) {
         /* A poor/lazy man's getopt */
@@ -193,6 +195,9 @@ int main( int argc, char** argv) {
                 break;
             }
             OPTION_VALUE_PROCESSED;
+        }
+        else if (OPTION_SET("--genetic_evolution", "-g")) {
+            genetic_evolution = true;
         }
         else {
             fprintf(stderr, "Ignoring unknown option: %s\n", argv[i]);
@@ -238,12 +243,32 @@ int main( int argc, char** argv) {
 
     if (benchmark) {
         GameState* g = gamestate_new();
-        g->player1.type = PLAYER_TYPE_AI;
+        g->player1.type = PLAYER_TYPE_AI;/*PLAYER_TYPE_HUMAN*/;
         g->player2.type = PLAYER_TYPE_AI;
         g->timelimit = BENCHMARK_TIMELIMIT*1000;
         gameloop(g);
         free(g);
         exit(0);
+    }
+
+
+    float player_fitness;
+
+    /* Genetic Evolution Framework */
+    if (genetic_evolution)
+    {
+        while (1)
+        {
+            server_init();/* Setup gameserver & Listen for game start command */
+            GameState* g = gamestate_new();
+            g->player1.type = PLAYER_TYPE_DARWIN;
+            g->player2.type = PLAYER_TYPE_AI;
+            gameloop(g);
+            player_fitness = calculate_fitness(PLAYER1, g);
+            server_send_evaluation(player_fitness);
+            free(g);
+            //exit(0)
+        }
     }
 
     i = 0;

@@ -20,7 +20,6 @@
  * MA  02110-1301, USA.
  *
  **/
-
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
@@ -31,6 +30,7 @@
 #include "graphics.h"
 #include "input.h"
 #include "sound.h"
+#include "tennix_server.h"
 
 time_t time_now;
 struct timeb tp;
@@ -84,6 +84,12 @@ GameState *gamestate_new() {
 
     memcpy(s, &template, sizeof(GameState));
 
+    /* Setup player1 fittness params */
+    s->player1.ball_proximity= 0;
+    s->player1.ball_proximity_count = 0;
+    s->player1.number_of_hits = 0;
+    s->player1.point_count = 0;
+
     game_setup_serve(s);
 
     /* smoothen n-gram */
@@ -98,11 +104,11 @@ GameState *gamestate_new() {
     return s;
 }
 
-#define HIT_WEIGHTAGE        5
-#define POINT_WEIGHTAGE      50
-#define PROXIMITY_WEIGHTAGE  0.5
+#define HIT_WEIGHTAGE        1000
+#define POINT_WEIGHTAGE      1500
+#define PROXIMITY_WEIGHTAGE  0.3 
 
-int calculate_fitness(int player, GameState *s)
+float calculate_fitness(int player, GameState *s)
 {
     switch (player) {
 
@@ -117,12 +123,12 @@ int calculate_fitness(int player, GameState *s)
 void extract_game_data(GameState *s)
 {
 //    printf("Ball        X = %f \t Y=%f\n", s->ball.x, s->ball.y);
-//    printf("Proximity Avg = %f \n", s->player1.ball_proximity/s->player1.ball_proximity_count);
+      printf("Proximity Avg = %f \n", s->player1.ball_proximity/s->player1.ball_proximity_count);
 //    printf("Opponent    X = %f \t Y=%f\n", s->player2.x, s->player2.y);
 //    printf("Delta = %f\n", s->player2.x - s->ball.x);
- //   printf("Hit count = %d\n", s->player1.number_of_hits);
+      printf("Hit count = %d\n", s->player1.number_of_hits);
       printf(" Player point = %d, Opponent point = %d\n", s->player1.point_count, s->player2.point_count);
-      printf("Fitness PLAYER1 = %d Fitness PLAYER2 = %d\n", calculate_fitness(PLAYER1, s), calculate_fitness(PLAYER2, s));
+      printf("Fitness PLAYER1 = %f Fitness PLAYER2 = %f\n", calculate_fitness(PLAYER1, s), calculate_fitness(PLAYER2, s));
 }
 
 
@@ -203,13 +209,13 @@ void gameloop(GameState *s) {
 
     extract_game_data(s);
 
-    clear_screen();
-    store_screen();
+    //clear_screen();
+    //store_screen();
 
-    stop_sample(SOUND_AUDIENCE);
-    stop_sample(SOUND_RAIN);
+    //stop_sample(SOUND_AUDIENCE);
+    //stop_sample(SOUND_RAIN);
 }
-
+// X min is 82 and X max is 540
 #define X_CLOSE_TO_PLAYER1 70
 #define X_CLOSE_TO_PLAYER2 550
 #define FALSE 0
@@ -231,13 +237,15 @@ void update_players_dist_from_ball(GameState* s)
         float ball_proximity = s->player1.ball_proximity;
 
         /* Update the Average for player1 */
-        ball_proximity = ((ball_proximity * ball_proximity_count) + ((s->ball.y - s->player1.y) * (s->ball.y - s->player1.y)))/(ball_proximity_count + 1); /* Sq root to get mean square */
+        ball_proximity = ( float )((ball_proximity * ball_proximity_count) + ((s->ball.y - s->player1.y) * (s->ball.y - s->player1.y)))/(ball_proximity_count + 1); /* Sq root to get mean square */
 
+        //printf("1: Ball Y diff = %f Old Average = %f   New Average = %f\n", (s->ball.y - s->player1.y), s->player1.ball_proximity, ball_proximity);
+
+        
         s->player1.ball_proximity_count++;
         s->player1.ball_proximity = ball_proximity;
         player1_measure_to_be_taken = FALSE;
 
-        //printf("1: Old Average = %f   New Average = %f\n", s->player1.ball_proximity, ball_proximity);
     }
 
     if ((player2_measure_to_be_taken == TRUE) && (s->ball.x > X_CLOSE_TO_PLAYER2)) {
@@ -247,14 +255,15 @@ void update_players_dist_from_ball(GameState* s)
         /* Update the Average for player2 */
         ball_proximity = ((ball_proximity * ball_proximity_count) + ((s->ball.y - s->player2.y) * (s->ball.y - s->player2.y)))/(ball_proximity_count + 1);
 
+        //printf("2: Ball Y diff = %f Old Average = %f   New Average = %f\n", s->ball.y - s->player2.y,  s->player2.ball_proximity, ball_proximity);
+        
         s->player2.ball_proximity_count++;
         s->player2.ball_proximity = ball_proximity;
         player2_measure_to_be_taken = FALSE;
 
-        //printf("2: Old Average = %f   New Average = %f\n", s->player2.ball_proximity, ball_proximity);
     }
 
-    printf(" GAME SCORE: %s   SET SCORE: %s\n", s->game_score_str, s->sets_score_str);
+    //printf(" GAME SCORE: %s   SET SCORE: %s\n", s->game_score_str, s->sets_score_str);
     //printf("Fitness PLAYER1 = %d Fitness PLAYER2 = %d\n", calculate_fitness(PLAYER1, s), calculate_fitness(PLAYER2, s));
     //printf(" Player point = %d, Opponent point = %d\n", s->player1.point_count, s->player2.point_count);
 
@@ -337,14 +346,16 @@ bool step( GameState* s)
             s->text_changed = true;
 
             if( s->player1.responsible) {
-                if( s->player1.type == PLAYER_TYPE_HUMAN && s->player2.type == PLAYER_TYPE_AI) {
+                if( (s->player1.type == PLAYER_TYPE_HUMAN && s->player2.type == PLAYER_TYPE_AI) ||
+                        (s->player1.type == PLAYER_TYPE_DARWIN && s->player2.type == PLAYER_TYPE_AI)) {
                     s->status = "computer scores";
                 } else {
                     s->status = "player 2 scores";
                 }
                 s->referee = REFEREE_PLAYER2;
             } else {
-                if( s->player1.type == PLAYER_TYPE_HUMAN && s->player2.type == PLAYER_TYPE_AI) {
+                if( (s->player1.type == PLAYER_TYPE_HUMAN && s->player2.type == PLAYER_TYPE_AI) ||
+                        (s->player1.type == PLAYER_TYPE_DARWIN && s->player2.type == PLAYER_TYPE_AI)) {
                     s->status = "player scores";
                 } else {
                     s->status = "player 1 scores";
@@ -365,7 +376,7 @@ bool step( GameState* s)
             printf( "-- game reset --\n");
 #endif
         }
-    
+
         if( IS_OUT_X(s->ball.x)) {
             if( !s->history_is_locked && s->referee != REFEREE_OUT) {
                 s->history[s->history_size] = (int)(NGRAM_STEPS*s->ball.y/HEIGHT);
@@ -397,6 +408,11 @@ bool step( GameState* s)
                 s->play_sound = SOUND_RACKET;
                 pan_sample(SOUND_RACKET, 0.4);
                 s->player1.number_of_hits++; // Every time player hits the ball , count it
+                /* Dump the hit count to a separate FILE */
+                char buf[50];
+                snprintf(buf, 50, "echo \"Hit count = %d Points: %d\" >> hit_count", s->player1.number_of_hits, s->player1.point_count);
+                system (buf);
+                /* END of hit count dump */
             } else if( s->ball.move_x >= 0 && IS_NEAR_X( s->player2.x, s->ball.x) && IS_NEAR_Y( s->player2.y, s->ball.y) && s->player2.state && s->referee != REFEREE_OUT) {
                 /* Player 2 hit the ball */
                 s->ball.x = GAME_X_MAX;
@@ -417,9 +433,45 @@ bool step( GameState* s)
     } else {
         s->history_is_locked = false;
     }
-
+#ifdef JOYSTICK
     SDL_PollEvent( &e);
+#endif
+
     keys = SDL_GetKeyState( NULL);
+    /* Point to plug in neural network input */
+    if (s->player1.type == PLAYER_TYPE_DARWIN)
+    {
+        int nn_input[3];
+        server_get_input_from_NN(s->player2.x, s->player2.y, s->ball.x, s->ball.y, nn_input);
+        if ( nn_input[UP] > 0 )
+        {
+            //printf (" NN said __UP__\n");
+            keys['w'] = 1;
+        } else {
+            keys['w'] = 0;
+        }
+
+        if (nn_input[DOWN] > 0 )
+        {
+            //printf (" NN said __DOWN__\n");
+            keys['s'] = 1;
+        } else {
+            keys['s'] =  0;
+        }
+
+        if (nn_input[HIT] > 0 )
+        {
+            //printf (" NN said __HIT__\n");
+            keys['d'] = 1;
+        } else {
+            keys['d'] = 0;
+        }
+
+    /* End of NN input */
+    }
+
+
+
 #ifdef JOYSTICK
     switch(e.type) {
         case SDL_JOYAXISMOTION:
@@ -476,7 +528,7 @@ bool step( GameState* s)
 #endif
 
     if(/*!(SDL_GetTicks() < fading_start+FADE_DURATION) &&*/ !s->is_over) { // Part of graphics 
-        if( s->player1.type == PLAYER_TYPE_HUMAN) {
+        if( s->player1.type == PLAYER_TYPE_HUMAN || s->player1.type == PLAYER_TYPE_DARWIN ) {
            input_human( &s->player1,
                    keys['w'] || keys[SDLK_UP] || s->joystick_y < -JOYSTICK_TRESHOLD,
                    keys['s'] || keys[SDLK_DOWN] || s->joystick_y > JOYSTICK_TRESHOLD,
@@ -757,7 +809,8 @@ float get_move_y( GameState* s, unsigned char player) {
     return (y_len*move_x)/(x_len);
 }
 
-void input_human( Player* player, bool up, bool down, bool hit, bool use_mouse, GameState* s) {
+void input_human( Player* player, bool up, bool down, bool hit, bool use_mouse, GameState* s) 
+{
     int diff = PLAYER_MOVE_Y;
     int mb;
 
