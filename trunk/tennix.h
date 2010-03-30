@@ -118,6 +118,6 @@ typedef struct {
 
 /* For debugging */
 // Comment GRAPHICS if we dont need any display
-//#define GRAPHICS
+#define GRAPHICS
 
 #endif
