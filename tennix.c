@@ -244,7 +244,7 @@ int main( int argc, char** argv) {
 
     if (benchmark) {
         GameState* g = gamestate_new();
-        g->player1.type = PLAYER_TYPE_AI;/*PLAYER_TYPE_HUMAN*/;
+        g->player1.type = PLAYER_TYPE_HUMAN;
         g->player2.type = PLAYER_TYPE_AI;
         g->timelimit = BENCHMARK_TIMELIMIT*1000;
         gameloop(g);

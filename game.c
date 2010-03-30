@@ -163,6 +163,8 @@ void gameloop(GameState *s) {
     ft = SDL_GetTicks();
 #endif
     while( !quit ) {
+        // Test code : for making display on to see serves
+        //display_on = 1;
 #ifdef GRAPHICS
         if (display_on) {
             TIME;
@@ -444,7 +446,7 @@ bool step( GameState* s)
     if (s->player1.type == PLAYER_TYPE_DARWIN)
     {
         int nn_input[3];
-        server_get_input_from_NN(s->player2.x, s->player2.y, s->ball.x, s->ball.y, nn_input);
+        server_get_input_from_NN(s->player1.x, s->player2.y, s->player2.x, s->player2.y, s->ball.x, s->ball.y, nn_input);
         if ( nn_input[UP] > 0 )
         {
             //printf (" NN said __UP__\n");
@@ -860,7 +862,7 @@ void input_human( Player* player, bool up, bool down, bool hit, bool use_mouse, 
     }
 #endif
 
-#ifdef JOTSTICK
+#ifdef JOYSTICK
 
     if (fabsf(s->joystick_y) > JOYSTICK_TRESHOLD) {
         diff = PLAYER_MOVE_Y*fabsf(s->joystick_y)/40.0;
@@ -942,7 +944,14 @@ void input_ai( Player* player, Ball* ball, Player* opponent, GameState* s) {
 
 void game_setup_serve( GameState* s) {
     s->ball.jump = 7.5;
-    s->ball.y = GAME_Y_MID;
+    int value = (rand() % 6) + 1;
+    double randomness = (RACKET_Y_MID * 4)/(double) value;
+    if (rand()%2) {
+        s->ball.y = (GAME_Y_MID + randomness);
+    }else {
+        s->ball.y = (GAME_Y_MID - randomness);
+    }
+    //printf(" SETUP SERVE ball y = %f\n", s->ball.y);
     s->ball.move_x = 0.0;
     s->ball.move_y = 0.0;
 

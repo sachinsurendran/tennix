@@ -96,11 +96,13 @@ server_send_evaluation(float fitness)
 }
 
 int
-server_get_input_from_NN(float opponent_x, float opponent_y, float ball_x, float ball_y, char *key)
+server_get_input_from_NN(float darwin_x, float darwin_y, float opponent_x, float opponent_y, float ball_x, float ball_y, int *key)
 {
 	struct tennix_to_NN_msg msg;
 	struct NN_to_tennix_msg NN_resp;
 
+        msg.darwin_x   = darwin_x;
+        msg.darwin_y   = darwin_y;
 	msg.opponent_x = opponent_x;
 	msg.opponent_y = opponent_y;
 	msg.ball_x     = ball_x;
@@ -125,7 +127,6 @@ server_process_msg (struct NN_to_tennix_msg *msg)
 	    case GAME_INIT:
 	    {
 		printf(" GAME_INIT msg recieved\n");
-                printf("keys[1] = %d\n", msg->keys[1]);
 		return START_GAME;
 	    }
 	    default:
