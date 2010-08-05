@@ -41,12 +41,13 @@ struct tennix_to_NN_msg {
 	float ball_y;
 	int seq_no;
         float fitness;
+	int winner;
 };
 
 void server_init();
 int server_listen_for_connection( int sockfd);
 int server_listen_for_response(int sockfd, struct NN_to_tennix_msg *msg) ;
-int server_send_evaluation(float fitness);
+int server_send_evaluation(float fitness, int winner);
 int server_get_input_from_NN(float darwin_x, float darwin_y, float opponent_x, float opponent_y, float ball_x, float ball_y, int *key);
 int server_process_msg (struct NN_to_tennix_msg *msg);
 

@@ -81,12 +81,13 @@ server_listen_for_response(int sockfd, struct NN_to_tennix_msg *msg)
 }
 
 int
-server_send_evaluation(float fitness)
+server_send_evaluation(float fitness, int winner)
 {
     struct tennix_to_NN_msg msg;
 
     msg.msg_type = END_GAME;
-    msg.fitness = fitness;
+    msg.fitness  = fitness;
+    msg.winner   = winner;
     printf("\n\n##################################################\n\nFITNESS = %f\n\n################################################################\n",
             msg.fitness);
     //sleep(0);

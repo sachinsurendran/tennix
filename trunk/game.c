@@ -48,8 +48,8 @@ GameState *gamestate_new() {
     GameState template = {
         { 0, 0, 0.0, 0.0, 0.0 },
         { 0, 0, 0, 0, 0 },
-        { GAME_X_MIN-RACKET_X_MID*2, GAME_Y_MID, 0, 0, 0, DESIRE_NORMAL, PLAYER_TYPE_HUMAN, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /*point*/, 0 , 0},
-        { GAME_X_MAX+RACKET_X_MID*2, GAME_Y_MID, 0, 0, 1, DESIRE_NORMAL, PLAYER_TYPE_AI, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /* point */, 0, 0},
+        { GAME_X_MIN-RACKET_X_MID*2, GAME_Y_MID, 0, 0, 0, DESIRE_NORMAL, PLAYER_TYPE_HUMAN, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /*clean hit count*/, 0 /*point*/, 0 , 0},
+        { GAME_X_MAX+RACKET_X_MID*2, GAME_Y_MID, 0, 0, 1, DESIRE_NORMAL, PLAYER_TYPE_AI, GAME_Y_MID, false, 0, {0}, 0, 0, PLAYER_ACCEL_DEFAULT, true, 0/* Racquet hit count*/, 0 /*clean hit count*/, 0 /*point*/, 0, 0},
         0,
         0,
         0,
@@ -79,7 +79,8 @@ GameState *gamestate_new() {
         0,
         0,
         false,
-        REFEREE_COUNT
+        REFEREE_COUNT,
+	false
     };
 
     s = (GameState*)malloc(sizeof(GameState));
@@ -91,6 +92,7 @@ GameState *gamestate_new() {
     s->player1.ball_proximity= 0;
     s->player1.ball_proximity_count = 0;
     s->player1.number_of_hits = 0;
+    s->player1.number_of_clean_hits = 0;
     s->player1.point_count = 0;
 
     game_setup_serve(s);
@@ -107,19 +109,35 @@ GameState *gamestate_new() {
     return s;
 }
 
-#define HIT_WEIGHTAGE        1000
+#define HIT_WEIGHTAGE        100
+#define CLEAN_HIT_WEIGHTAGE  1000
 #define POINT_WEIGHTAGE      1500
-#define PROXIMITY_WEIGHTAGE  0.3 
+#define PROXIMITY_WEIGHTAGE  0.3
 
 float calculate_fitness(int player, GameState *s)
 {
     switch (player) {
 
-        case PLAYER1:
+	/*case PLAYER1:
             return ((s->player1.number_of_hits * HIT_WEIGHTAGE) + (s->player1.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player1.ball_proximity));
 
         case PLAYER2:
-            return ((s->player2.number_of_hits * HIT_WEIGHTAGE) + (s->player2.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player2.ball_proximity));
+            return ((s->player2.number_of_hits * HIT_WEIGHTAGE) + (s->player2.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player2.ball_proximity));*/
+
+	/* Avinash: Included clean_hit count in fitness calculation */
+        case PLAYER1:
+            return ((s->player1.number_of_hits * HIT_WEIGHTAGE) + (s->player1.number_of_clean_hits * CLEAN_HIT_WEIGHTAGE) + (s->player1.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player1.ball_proximity));
+
+        case PLAYER2:
+            return ((s->player2.number_of_hits * HIT_WEIGHTAGE) + (s->player2.number_of_clean_hits * CLEAN_HIT_WEIGHTAGE) + (s->player2.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player2.ball_proximity));
+
+	/* Avinash: Included clean_hit count in fitness calculation 
+	            Points for number of points scored increases exponentially */
+        /*case PLAYER1:
+            return ((s->player1.number_of_hits * HIT_WEIGHTAGE) + (s->player1.number_of_clean_hits * CLEAN_HIT_WEIGHTAGE) + (s->player1.point_count * s->player1.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player1.ball_proximity));
+
+        case PLAYER2:
+            return ((s->player2.number_of_hits * HIT_WEIGHTAGE) + (s->player2.number_of_clean_hits * CLEAN_HIT_WEIGHTAGE) + (s->player2.point_count * s->player2.point_count * POINT_WEIGHTAGE) - (PROXIMITY_WEIGHTAGE * s->player2.ball_proximity));*/
     }
 }
 
@@ -231,7 +249,7 @@ void update_players_dist_from_ball(GameState* s)
      * hit and point is very high
      */
     static int player1_measure_to_be_taken = TRUE; /* Take proximity measure once, for each ball coming out way */
-    static int player2_measure_to_be_taken = TRUE; /* Take proximity measure once, for each ball coming out way */
+    static int player2_measure_to_be_taken = FALSE; /* Take proximity measure once, for each ball coming out way */
 
 
     if ((player1_measure_to_be_taken == TRUE) && (s->ball.x < X_CLOSE_TO_PLAYER1)) {
@@ -347,10 +365,13 @@ bool step( GameState* s)
             strcpy( s->sets_score_str, format_sets( s));
             s->text_changed = true;
 
+	    /* Avinash: Part of clean_hit counter */
+	    s->clean_hit_counter_lock = false;
+
             if( s->player1.responsible) {
                 if( (s->player1.type == PLAYER_TYPE_HUMAN && s->player2.type == PLAYER_TYPE_AI) ||
                         (s->player1.type == PLAYER_TYPE_DARWIN && s->player2.type == PLAYER_TYPE_AI)) {
-                    s->status = "computer scores";
+                    s->status = "AI scores"; /*"computer scores";*/
                 } else {
                     s->status = "player 2 scores";
                 }
@@ -358,7 +379,7 @@ bool step( GameState* s)
             } else {
                 if( (s->player1.type == PLAYER_TYPE_HUMAN && s->player2.type == PLAYER_TYPE_AI) ||
                         (s->player1.type == PLAYER_TYPE_DARWIN && s->player2.type == PLAYER_TYPE_AI)) {
-                    s->status = "player scores";
+                    s->status = "Darwin scores"; /*"player scores";*/
                 } else {
                     s->status = "player 1 scores";
                 }
@@ -397,6 +418,16 @@ bool step( GameState* s)
                 }
                 s->history_is_locked = true;
             }
+
+	    /* Avinash: To check if the rally played by Darwin has landed inside the opponent's court */
+	    if( s->clean_hit_counter_lock && s->ball.move_x >= 0 && IS_NEAR_X( s->player2.x, s->ball.x) && s->referee != REFEREE_OUT)
+	    {
+		/* Avinash: Clean hit by Darwin into the opponent's court */
+		s->player1.number_of_clean_hits++;
+
+		s->clean_hit_counter_lock = false;
+	    }
+
             if( s->ball.move_x <= 0 && IS_NEAR_X( s->player1.x, s->ball.x) && IS_NEAR_Y( s->player1.y, s->ball.y) && s->player1.state && s->referee != REFEREE_OUT) {
                 /* Player 1 hit the ball */
                 s->ball.x = GAME_X_MIN;
@@ -412,9 +443,11 @@ bool step( GameState* s)
                 s->play_sound = SOUND_RACKET;
                 pan_sample(SOUND_RACKET, 0.4);
                 s->player1.number_of_hits++; // Every time player hits the ball , count it
+		s->clean_hit_counter_lock = true; /* Avinash: Part of clean_hit counter */
                 /* Dump the hit count to a separate FILE */
-                char buf[50];
-                snprintf(buf, 50, "echo \"Hit count = %d Points: %d\" >> hit_count", s->player1.number_of_hits, s->player1.point_count);
+                char buf[70];
+		//snprintf(buf, 70, "echo \"Hit count = %d Points: %d\" >> hit_count", s->player1.number_of_hits, s->player1.point_count);
+                snprintf(buf, 70, "echo \"Hit count = %d Clean Hits = %d Points: %d\" >> hit_count", s->player1.number_of_hits, s->player1.number_of_clean_hits, s->player1.point_count);
                 system (buf);
                 /* END of hit count dump */
             } else if( s->ball.move_x >= 0 && IS_NEAR_X( s->player2.x, s->ball.x) && IS_NEAR_Y( s->player2.y, s->ball.y) && s->player2.state && s->referee != REFEREE_OUT) {
@@ -431,6 +464,7 @@ bool step( GameState* s)
                 s->ball.jump += 1.0-2.0*(s->player2.state<5);
                 s->play_sound = SOUND_RACKET;
                 s->player2.number_of_hits++;
+		//s->player1.number_of_clean_hits++;
                 pan_sample(SOUND_RACKET, 0.6);
             }
         }
@@ -1002,7 +1036,9 @@ void score_game( GameState* s, bool player1_scored) {
     /* Increment the points per player */
     winner->point_count++;
 
-    if (s->player1.point_count > 3)
+    if (s->player1.point_count > 25)
+    //if (s->player1.number_of_hits > 0)
+    //if (s->player1.number_of_clean_hits > 25)
     {
         // Turn on display for good players
         display_on = 1;
@@ -1026,8 +1062,10 @@ void score_game( GameState* s, bool player1_scored) {
 #endif
 
             /* scoring the set.. */
-            if( (winner->sets[s->current_set] == 6 && loser->sets[s->current_set] < 5) ||
-                winner->sets[s->current_set] == 7) {
+	    if( (winner->sets[s->current_set] == 6 && loser->sets[s->current_set] < 5) ||
+-                winner->sets[s->current_set] == 7) {
+            /*if( (winner->sets[s->current_set] == 3 && loser->sets[s->current_set] < 2) ||
+                winner->sets[s->current_set] == 4) {*/
                 s->current_set++;
                 s->winner = game_get_winner( s);
             }
