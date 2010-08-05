@@ -266,7 +266,7 @@ int main( int argc, char** argv) {
             g->player2.type = PLAYER_TYPE_AI;
             gameloop(g);
             player_fitness = calculate_fitness(PLAYER1, g);
-            server_send_evaluation(player_fitness);
+            server_send_evaluation(player_fitness, g->winner);
             free(g);
             //exit(0)
         }

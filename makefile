@@ -110,6 +110,11 @@ dump: archive
 tennix.tnx: archive $(TOARCHIVE)
 	rm -f tennix.tnx
 	./archive $@ $(TOARCHIVE)
+	cp -p ../tennix.tnx /home/nash/tennix/
+	
+# Hit_Count
+	rm -f hit_count
+	cp -p ../hit_count /home/nash/tennix/
 
 # Mac OS X-specific targets
 release-osx: tennix ChangeLog

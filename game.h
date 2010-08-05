@@ -92,7 +92,8 @@ typedef struct {
     int mouse_y; /* y position of mouse */
     float accelerate; /* a value [0..1] how fast the user accelerates */
     bool mouse_locked; /* on start, ignore unpressed mouse state */
-    int number_of_hits; /* Count the number of times the plaer hits the ball */
+    int number_of_hits; /* Count the number of times the player hits the ball */
+    int number_of_clean_hits; /* Count the number of times the player hits the ball inside the opponents court */
     int point_count; /* Count of every win, this increments every time player scores */
     float ball_proximity; /* figure  of proximity to ball */
     unsigned int ball_proximity_count; /* count of times the ball proximity was measured, for averages */
@@ -144,6 +145,7 @@ typedef struct {
     int timelimit;
     bool text_changed;
     unsigned char old_referee;
+    bool clean_hit_counter_lock;
 } GameState;
 
 #define PI 3.1415

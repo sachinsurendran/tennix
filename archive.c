@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
     char *data;
     FILE *fp;
     char *filename;
-    char *bn = (char*)basename(argv[0]);
+    char *bn = (char*)(argv[0]);
     int len, i;
     struct stat st;
 
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
             data = (char*)malloc(len);
             fread(data, len, 1, fp);
             fclose(fp);
-            tnxar_append(tnxar, (char*)basename(argv[i]), data, len);
+            tnxar_append(tnxar, (char*)(argv[i]), data, len);
         }
         tnxar_build(tnxar, argv[1]);
     } else if(strcmp(bn, "dump") == 0) {
