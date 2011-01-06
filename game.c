@@ -1063,7 +1063,7 @@ void score_game( GameState* s, bool player1_scored) {
 
             /* scoring the set.. */
 	    if( (winner->sets[s->current_set] == 6 && loser->sets[s->current_set] < 5) ||
--                winner->sets[s->current_set] == 7) {
+                 winner->sets[s->current_set] == 7) {
             /*if( (winner->sets[s->current_set] == 3 && loser->sets[s->current_set] < 2) ||
                 winner->sets[s->current_set] == 4) {*/
                 s->current_set++;
